@@ -1,0 +1,18 @@
+[
+  {
+    "id": "d12e8638-5504-4f95-b557-09eca29b38a7",
+    "username": "123456",
+    "displayName": "Данил",
+    "salt": "18cc4272fb6bf251ecc091440702711e",
+    "passwordHash": "cc3aa274e333d54e6ea1428f23d068484a19ce2fed47e54883d9cf2c318316dc498f6ed6a797c2107e97fd49db6a9a1726ee54c412ef44a93b4eafc8291359ee",
+    "createdAt": "2026-11-20T17:09:47.078Z"
+  },
+  {
+    "id": "ddf4b3ea-2747-4422-880a-646a9ed470ba",
+    "username": "111111",
+    "displayName": "Таня",
+    "salt": "68248a04ca166348fefc4640c77858c9",
+    "passwordHash": "10ddc5a864c1e0f4937b957eacf48581c2148a766b43810c2499a95bd4d9951ee76e9f98a58ae73befbe40063f6237137d3973de2cf7db9b4c43c64dec620715",
+    "createdAt": "2026-11-20T17:10:04.627Z"
+  }
+]
