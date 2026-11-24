@@ -686,8 +686,8 @@ function applyRoomState(s) {
   $("adminStatus").textContent = admin
     ? "★ Ты администратор комнаты"
     : "Управление плеером доступно администратору";
-  $("roomPlay").style.opacity = admin ? "1" : ".55";
-  if ($("roomPause")) $("roomPause").disabled = !admin;
+  $("roomPlay").disabled = !admin || !s.current;
+  $("roomPause").disabled = !admin || !s.isPlaying;
   $("roomNext").disabled = !admin;
 
   syncAudio(s);
@@ -782,9 +782,30 @@ function tryAudioPlay() {
     .finally(() => (audioPlayPending = false));
 }
 
-$("roomPlay").addEventListener("click", () => sendSocket({ type: "play" }));
-$("roomPause")?.addEventListener("click", () => sendSocket({ type: "pause" }));
+$("roomPlay").addEventListener("click", () => {
+  if (!currentRoomState) return toast("Сначала подключись к комнате");
+  sendSocket({ type: "play" });
+});
+$("roomPause").addEventListener("click", () => {
+  if (!currentRoomState) return toast("Сначала подключись к комнате");
+  sendSocket({ type: "pause" });
+});
 $("roomNext").addEventListener("click", () => sendSocket({ type: "next" }));
+
+$("shuffleFavorites").addEventListener("click", () => {
+  if (!currentRoomState) return toast("Сначала подключись к комнате");
+  if (!favorites.length) return toast("В избранном пока нет песен");
+  const shuffled = [...favorites];
+  for (let i = shuffled.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+  }
+  let added = 0;
+  shuffled.forEach((track) => {
+    if (sendSocket({ type: "queue:add", trackId: track.id })) added++;
+  });
+  toast(`В очередь отправлено: ${added} из ${shuffled.length}`);
+});
 
 $("addRoomTrack").addEventListener("click", () => {
   const url = $("roomTrackUrl").value.trim();
