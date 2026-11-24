@@ -686,14 +686,9 @@ function applyRoomState(s) {
   $("adminStatus").textContent = admin
     ? "★ Ты администратор комнаты"
     : "Управление плеером доступно администратору";
-  $("roomPlay").style.opacity = admin ? "1" : ".55";
-  $("roomPlay").disabled = !admin;
+  $("roomPlay").disabled = !admin || !s.current;
+  $("roomPause").disabled = !admin || !s.isPlaying;
   $("roomNext").disabled = !admin;
-
-  // Одна кнопка управляет и запуском, и паузой.
-  $("roomPlay").textContent = s.isPlaying ? "Ⅱ" : "▶";
-  $("roomPlay").title = s.isPlaying ? "Пауза" : "Воспроизвести";
-  $("roomPlay").setAttribute("aria-label", s.isPlaying ? "Пауза" : "Воспроизвести");
 
   syncAudio(s);
 }
@@ -788,44 +783,28 @@ function tryAudioPlay() {
 }
 
 $("roomPlay").addEventListener("click", () => {
-  if (!currentRoomState) {
-    toast("Сначала подключись к комнате");
-    return;
-  }
-
-  if (mySocketId !== currentRoomState.adminId) {
-    toast("Управлять воспроизведением может только администратор комнаты");
-    return;
-  }
-
-  sendSocket({ type: currentRoomState.isPlaying ? "pause" : "play" });
+  if (!currentRoomState) return toast("Сначала подключись к комнате");
+  sendSocket({ type: "play" });
 });
-
+$("roomPause").addEventListener("click", () => {
+  if (!currentRoomState) return toast("Сначала подключись к комнате");
+  sendSocket({ type: "pause" });
+});
 $("roomNext").addEventListener("click", () => sendSocket({ type: "next" }));
 
-// Перемешивает избранное и добавляет песни в конец очереди комнаты.
 $("shuffleFavorites").addEventListener("click", () => {
-  if (!socket || socket.readyState !== WebSocket.OPEN) {
-    toast("Сначала подключись к комнате");
-    return;
-  }
-
-  if (!favorites.length) {
-    toast("В избранном пока нет песен");
-    return;
-  }
-
+  if (!currentRoomState) return toast("Сначала подключись к комнате");
+  if (!favorites.length) return toast("В избранном пока нет песен");
   const shuffled = [...favorites];
   for (let i = shuffled.length - 1; i > 0; i--) {
     const j = Math.floor(Math.random() * (i + 1));
     [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
   }
-
+  let added = 0;
   shuffled.forEach((track) => {
-    sendSocket({ type: "queue:add", trackId: track.id });
+    if (sendSocket({ type: "queue:add", trackId: track.id })) added++;
   });
-
-  toast(`Перемешано и добавлено в очередь: ${shuffled.length} песен`);
+  toast(`В очередь отправлено: ${added} из ${shuffled.length}`);
 });
 
 $("addRoomTrack").addEventListener("click", () => {
