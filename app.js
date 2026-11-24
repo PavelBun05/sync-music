@@ -687,10 +687,13 @@ function applyRoomState(s) {
     ? "★ Ты администратор комнаты"
     : "Управление плеером доступно администратору";
   $("roomPlay").style.opacity = admin ? "1" : ".55";
+  $("roomPlay").disabled = !admin;
+  $("roomNext").disabled = !admin;
+
+  // Одна кнопка управляет и запуском, и паузой.
   $("roomPlay").textContent = s.isPlaying ? "Ⅱ" : "▶";
   $("roomPlay").title = s.isPlaying ? "Пауза" : "Воспроизвести";
   $("roomPlay").setAttribute("aria-label", s.isPlaying ? "Пауза" : "Воспроизвести");
-  $("roomNext").disabled = !admin;
 
   syncAudio(s);
 }
@@ -790,18 +793,17 @@ $("roomPlay").addEventListener("click", () => {
     return;
   }
 
-  if (!mySocketId || mySocketId !== currentRoomState.adminId) {
-    toast("Управлять воспроизведением может администратор комнаты");
+  if (mySocketId !== currentRoomState.adminId) {
+    toast("Управлять воспроизведением может только администратор комнаты");
     return;
   }
 
-  sendSocket({
-    type: currentRoomState.isPlaying ? "pause" : "play",
-  });
+  sendSocket({ type: currentRoomState.isPlaying ? "pause" : "play" });
 });
 
 $("roomNext").addEventListener("click", () => sendSocket({ type: "next" }));
 
+// Перемешивает избранное и добавляет песни в конец очереди комнаты.
 $("shuffleFavorites").addEventListener("click", () => {
   if (!socket || socket.readyState !== WebSocket.OPEN) {
     toast("Сначала подключись к комнате");
@@ -814,25 +816,16 @@ $("shuffleFavorites").addEventListener("click", () => {
   }
 
   const shuffled = [...favorites];
-
   for (let i = shuffled.length - 1; i > 0; i--) {
     const j = Math.floor(Math.random() * (i + 1));
     [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
   }
 
-  let added = 0;
+  shuffled.forEach((track) => {
+    sendSocket({ type: "queue:add", trackId: track.id });
+  });
 
-  for (const track of shuffled) {
-    if (sendSocket({ type: "queue:add", trackId: track.id })) {
-      added++;
-    } else {
-      break;
-    }
-  }
-
-  if (added) {
-    toast(`В очередь добавлено перемешанных треков: ${added}`);
-  }
+  toast(`Перемешано и добавлено в очередь: ${shuffled.length} песен`);
 });
 
 $("addRoomTrack").addEventListener("click", () => {
